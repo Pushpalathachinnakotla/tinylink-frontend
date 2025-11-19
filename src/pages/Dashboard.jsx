@@ -11,10 +11,16 @@ export default function Dashboard() {
   const [targetUrl, setTargetUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   async function fetchLinks() {
-    const res = await axios.get(API);
-    setLinks(res.data);
+    try {
+      setFetching(true);
+      const res = await axios.get(API);
+      setLinks(res.data);
+    } finally {
+      setFetching(false);
+    }
   }
 
   async function createLink(e) {
@@ -53,20 +59,30 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Links</h3>
-          <p className="stat-number">{links.length}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Total Clicks</h3>
-          <p className="stat-number">
-            {links.reduce((sum, l) => sum + l.total_clicks, 0)}
-          </p>
-        </div>
-        <div className="stat-card">
-          <h3>Active Links</h3>
-          <p className="stat-number">{links.filter(l => l.total_clicks > 0).length}</p>
-        </div>
+        {fetching ? (
+          [1,2,3].map((i) => (
+            <div className="stat-card" key={i}>
+              <div className="skeleton skeleton-card" />
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="stat-card">
+              <h3>Total Links</h3>
+              <p className="stat-number">{links.length}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Total Clicks</h3>
+              <p className="stat-number">
+                {links.reduce((sum, l) => sum + l.total_clicks, 0)}
+              </p>
+            </div>
+            <div className="stat-card">
+              <h3>Active Links</h3>
+              <p className="stat-number">{links.filter(l => l.total_clicks > 0).length}</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Form */}
@@ -111,9 +127,22 @@ export default function Dashboard() {
           </thead>
 
           <tbody>
-            {links.map((l) => (
-              <LinkRow key={l.code} link={l} deleteLink={deleteLink} />
-            ))}
+            {fetching ? (
+              // show 6 skeleton rows while fetching
+              [1,2,3,4,5,6].map(i => (
+                <tr className="skeleton-row" key={i}>
+                  <td><div className="skeleton skeleton-cell" /></td>
+                  <td><div className="skeleton skeleton-cell short" /></td>
+                  <td><div className="skeleton skeleton-cell" /></td>
+                  <td><div className="skeleton skeleton-cell" /></td>
+                  <td><div className="skeleton skeleton-cell" style={{ width: 60 }} /></td>
+                </tr>
+              ))
+            ) : (
+              links.map((l) => (
+                <LinkRow key={l.code} link={l} deleteLink={deleteLink} />
+              ))
+            )}
           </tbody>
           </table>
         </div>
